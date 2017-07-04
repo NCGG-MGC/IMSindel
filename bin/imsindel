@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require_relative '../lib/ims_indel'
+
+config = {}
+OptionParser.new do |opt|
+  required = [:bam, :chr, :outd, :indelsize, :reffa]
+  opt.on('--bam /path/to/foo.bam') {|v| config[:bam] = v}
+  opt.on('--chr chromosome') {|v| config[:chr] = v}
+  opt.on('--outd /path/to/outoput-dir') {|v| config[:outd] = v}
+  opt.on('--indelsize indel-size') {|v| config[:indelsize] = v.to_i}
+  # samtoolsで使用するためindex file:fasta.faiもできていることが前提
+  opt.on('--reffa /path/to/ref.fa') {|v| config[:reffa] = v} 
+  opt.on('--baseq avg-base-quality') {|v| config[:baseq] = v.to_i}
+  opt.on('--mapq mapping-quality') {|v| config[:mapq] = v.to_i}
+  opt.on('--within read-grouping-bases') {|v| config[:within] = v.to_i}
+  opt.on('--pair-within grouping-pair-bases') {|v| config[:pair_within] = v.to_i}
+  opt.on('--alt-read-depth alt-read-depth') {|v| config[:alt_read_depth] = v.to_i}
+  opt.on('--support-reads grouping-minimum-reads') {|v| config[:support_reads] = v.to_i}
+  opt.on('--clip-length clipping-flagment-minimum-bases') {|v| config[:clip_length] = v.to_i}
+  opt.on('--glsearch /path/to/glsearch36') {|v| config[:glsearch] = v}
+  opt.on('--glsearch-mat /path/to/foo.mat') {|v| config[:glsearch_mat] = v}
+  opt.on('--mafft /path/to/mafft') {|v| config[:mafft] = v}
+  opt.on('--samtools /path/to/samtools') {|v| config[:samtools] = v}
+  opt.on('--temp /temp') {|v| config[:temp] = v}
+  opt.on('--thread num') {|v| config[:thread] = v.to_i}
+
+  opt.parse!(ARGV)
+  required.each do |o|
+    unless config.has_key?(o)
+      STDERR.puts "#{o} is required"
+      STDERR.puts opt.help
+      exit
+    end
+  end
+end
+
+app = IMSIndel::App.new(config)
+app.print_config
+app.run
