@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 
 require 'optparse'
-require_relative '../lib/ims_indel'
 
 config = {}
 OptionParser.new do |opt|
@@ -12,19 +11,19 @@ OptionParser.new do |opt|
   opt.on('--indelsize indel-size') {|v| config[:indelsize] = v.to_i}
   # samtoolsで使用するためindex file:fasta.faiもできていることが前提
   opt.on('--reffa /path/to/ref.fa') {|v| config[:reffa] = v} 
-  opt.on('--baseq avg-base-quality') {|v| config[:baseq] = v.to_i}
-  opt.on('--mapq mapping-quality') {|v| config[:mapq] = v.to_i}
-  opt.on('--within read-grouping-bases') {|v| config[:within] = v.to_i}
-  opt.on('--pair-within grouping-pair-bases') {|v| config[:pair_within] = v.to_i}
-  opt.on('--alt-read-depth alt-read-depth') {|v| config[:alt_read_depth] = v.to_i}
-  opt.on('--support-reads grouping-minimum-reads') {|v| config[:support_reads] = v.to_i}
-  opt.on('--clip-length clipping-flagment-minimum-bases') {|v| config[:clip_length] = v.to_i}
-  opt.on('--glsearch /path/to/glsearch36') {|v| config[:glsearch] = v}
-  opt.on('--glsearch-mat /path/to/foo.mat') {|v| config[:glsearch_mat] = v}
-  opt.on('--mafft /path/to/mafft') {|v| config[:mafft] = v}
-  opt.on('--samtools /path/to/samtools') {|v| config[:samtools] = v}
-  opt.on('--temp /temp') {|v| config[:temp] = v}
-  opt.on('--thread num') {|v| config[:thread] = v.to_i}
+  opt.on('--baseq [20]') {|v| config[:baseq] = v.to_i}
+  opt.on('--mapq [20]') {|v| config[:mapq] = v.to_i}
+  opt.on('--within [3]') {|v| config[:within] = v.to_i}
+  opt.on('--pair-within [5]') {|v| config[:pair_within] = v.to_i}
+  opt.on('--alt-read-depth [5]') {|v| config[:alt_read_depth] = v.to_i}
+  opt.on('--support-reads [3]') {|v| config[:support_reads] = v.to_i}
+  opt.on('--clip-length [5]') {|v| config[:clip_length] = v.to_i}
+  opt.on('--glsearch [glsearch36]') {|v| config[:glsearch] = v}
+  opt.on('--glsearch-mat [data/mydna.mat]') {|v| config[:glsearch_mat] = v}
+  opt.on('--mafft [mafft]') {|v| config[:mafft] = v}
+  opt.on('--samtools [samtools]') {|v| config[:samtools] = v}
+  opt.on('--temp [/temp]') {|v| config[:temp] = v}
+  opt.on('--thread [1]') {|v| config[:thread] = v.to_i}
 
   opt.parse!(ARGV)
   required.each do |o|
@@ -36,6 +35,7 @@ OptionParser.new do |opt|
   end
 end
 
+require_relative '../lib/ims_indel'
 app = IMSIndel::App.new(config)
 app.print_config
 app.run
