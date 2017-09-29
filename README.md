@@ -18,7 +18,7 @@
 * --bam /path/to/foo.bam
 * --chr chromosome
 * --outd /path/to/outoput-dir
-* --indelsize indel-size
+* --indelsize maximal indel-size
 * --reffa /path/to/ref.fa
 * --baseq avg-base-quality [20]
 * --mapq mapping-quality [20]

@@ -8,7 +8,7 @@ OptionParser.new do |opt|
   opt.on('--bam /path/to/foo.bam') {|v| config[:bam] = v}
   opt.on('--chr chromosome') {|v| config[:chr] = v}
   opt.on('--outd /path/to/outoput-dir') {|v| config[:outd] = v}
-  opt.on('--indelsize indel-size') {|v| config[:indelsize] = v.to_i}
+  opt.on('--indelsize maximal indel-size') {|v| config[:indelsize] = v.to_i}
   # samtoolsで使用するためindex file:fasta.faiもできていることが前提
   opt.on('--reffa /path/to/ref.fa') {|v| config[:reffa] = v} 
   opt.on('--baseq [20]') {|v| config[:baseq] = v.to_i}
