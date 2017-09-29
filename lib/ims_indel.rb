@@ -63,7 +63,7 @@ module IMSIndel
 
     def run_make_consensus_support_reads(read_group)
       puts ">4. making consensus seqs from support reads..."
-      consensus = Consensus.new(@config[:temp], @config[:thread])
+      consensus = Consensus.new(@config[:temp], @config[:thread], @config[:mafft])
       consensus.make_support_read_consensus(read_group, @config[:alt_read_depth])
       puts "#backward clip with consensus:\t#{read_group.backward_clips.size} --> #{consensus.backward_clip_consensus.size}"
       puts "#forward clip with consensus:\t#{read_group.forward_clips.size} --> #{consensus.forward_clip_consensus.size}"

@@ -13,9 +13,10 @@ module IMSIndel
       :paired_long_insertions,
       :unpaired_long_indels
 
-    def initialize(temp_path, thread)
+    def initialize(temp_path, thread, mafft)
       @temp_path = temp_path
       @thread = thread
+      @mafft = mafft
     end
 
     def indel_list
@@ -157,7 +158,7 @@ module IMSIndel
       end
       tmp.close
       td = @temp_path ? "TMPDIR=#{@temp_path}" : ""
-      res =`#{td} mafft --nuc --ep 0.0 --op 1 --genafpair --maxiterate 1000 #{tmp.path} 2>/dev/null`
+      res =`#{td} #{@mafft} --nuc --ep 0.0 --op 1 --genafpair --maxiterate 1000 #{tmp.path} 2>/dev/null`
       tmp.close(true)
       unless $?.success?
         raise "mafft exec error: #{$?}"
