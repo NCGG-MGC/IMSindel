@@ -18,7 +18,7 @@
 * --bam /path/to/foo.bam
 * --chr chromosome
 * --outd /path/to/outoput-dir
-* --indelsize maximal indel-size
+* --indelsize maximal-indel-size
 * --reffa /path/to/ref.fa
 * --baseq avg-base-quality [20]
 * --mapq mapping-quality [20]
@@ -26,7 +26,8 @@
 * --pair-within grouping-pair-bases [5]
 * --alt-read-depth alt-read-depth [5]
 * --support-reads grouping-minimum-reads [3]
-* --clip-length clipping-flagment-minimum-bases [5]
+* --clip-length clipped-fragment-minimum-length [5]
+* --support-clip-length one-support-length-in-clipped-fragments [5]
 * --glsearch /path/to/glsearch36 [glsearch36]
 * --glsearch-mat /path/to/foo.mat [data/mydna.mat]
 * --mafft /path/to/mafft [mafft]
