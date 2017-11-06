@@ -34,3 +34,4 @@
 * --samtools /path/to/samtools [samtools]
 * --temp temp-dir-for-mafft-and-glsearch [/tmp]
 * --thread number-of-mafft-threads [1]
+* --output-consensus-seq /path/to/output-dir
