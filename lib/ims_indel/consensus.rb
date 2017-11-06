@@ -11,12 +11,14 @@ module IMSIndel
       :forward_clip_consensus,
       :short_indel_consensus,
       :paired_long_insertions,
-      :unpaired_long_indels
+      :unpaired_long_indels,
+      :mafft_inputs
 
-    def initialize(temp_path, thread, mafft)
+    def initialize(temp_path, thread, mafft, keep_mafft_input)
       @temp_path = temp_path
       @thread = thread
       @mafft = mafft
+      @mafft_inputs = {} if keep_mafft_input
     end
 
     def indel_list
@@ -81,67 +83,47 @@ module IMSIndel
       end
       ts.each(&:join)
       consensus_all  = []
-      ts.map { |t| consensus_all.concat(t['cons']) }
+      ts.each { |t| consensus_all.concat(t['cons']) }
       consensus_all.sort!{|a,b| a.start_pos <=> b.start_pos} # start pos sort
       return consensus_all
     end
 
     def make_consensus(clips, read_type, alt_read_depth, start_index, total_size)
       consensus_all  = []
-      #total_size = clips.size
 
       clips.each.with_index(start_index) do |group_reads, index|
-        consensus, align_reads_names, read_cnt = mafft_consensus(group_reads, 0.8) # %identity = 0.8, 1.0 is too strict
+        consensus, read_cnt = mafft_consensus(group_reads, 0.8) # %identity = 0.8, 1.0 is too strict
         consensus, trim_flag = trim_consensus(consensus)
 
-        #puts "#{read_type}\t#{index}/#{total_size}"
         #  consensus = "aaagtgttg?ggtagaaggaaaggaaggaaagagagaaggggaaggaactg?gaga"
         if consensus.empty? || consensus.count("?") > 5 # SNP check and sequence error, if the number of SNPs is more than 5 ( > 5)
-          # debug
-          #align_reads_names.each do |line|
-            #line.chomp!
-            #if line.end_with?("CONSENSUS")
-              #print line, "\tNOT!\n"
-            #else
-              #puts line
-            #end
-          #end
-          #puts
-
+          next
+        end
         # SNP check, if the number of SNPs is less than 3 ( <= 2)
-        else 
-          consensus, align_reads_names, read_cnt = mafft_consensus(group_reads, 0.5) # %identity = 0.5, consensus updated
-          consensus = trim_consensus_with_flag(consensus, trim_flag)
+        consensus, read_cnt = mafft_consensus(group_reads, 0.5) # %identity = 0.5, consensus updated
+        if read_type == :SID && read_cnt < alt_read_depth # short indel depth < 5はskip
+          next
+        end
 
-          clip_chrpos_min = group_reads[0].start_pos < group_reads[0].end_pos ? group_reads[0].start_pos : group_reads[0].end_pos
-          clip_chrpos_max = group_reads[0].start_pos > group_reads[0].end_pos ? group_reads[0].start_pos : group_reads[0].end_pos
-          group_reads.each do |read|
-            if read.start_pos < read.end_pos
-              clip_chrpos_min = read.start_pos if read.start_pos < clip_chrpos_min
-              clip_chrpos_max = read.end_pos if read.end_pos > clip_chrpos_max
-            else
-              clip_chrpos_min = read.end_pos if read.end_pos < clip_chrpos_min
-              clip_chrpos_max = read.start_pos if read.start_pos > clip_chrpos_max
-            end
-          end
+        consensus = trim_consensus_with_flag(consensus, trim_flag)
+        clip_chrpos_min = group_reads[0].start_pos < group_reads[0].end_pos ? group_reads[0].start_pos : group_reads[0].end_pos
+        clip_chrpos_max = group_reads[0].start_pos > group_reads[0].end_pos ? group_reads[0].start_pos : group_reads[0].end_pos
 
-          case read_type
-          when :B
-            #puts align_reads_names
-            consensus_all << Read.new(read_type, clip_chrpos_min, clip_chrpos_max, consensus, read_cnt)
-          when :F
-            #puts align_reads_names
-            consensus_all << Read.new(read_type, clip_chrpos_min, clip_chrpos_max, consensus, read_cnt)
-          when :SID
-            #puts align_reads_names
-            if read_cnt >= alt_read_depth # short indel depth < 5はskip
-              consensus_all << Read.new(read_type, clip_chrpos_min, clip_chrpos_max, consensus, read_cnt)
-            end
+        group_reads.each do |read|
+          if read.start_pos < read.end_pos
+            clip_chrpos_min = read.start_pos if read.start_pos < clip_chrpos_min
+            clip_chrpos_max = read.end_pos if read.end_pos > clip_chrpos_max
+          else
+            clip_chrpos_min = read.end_pos if read.end_pos < clip_chrpos_min
+            clip_chrpos_max = read.start_pos if read.start_pos > clip_chrpos_max
           end
-          #puts
+        end
+        consensus_read = Read.new(type: read_type, start_pos: clip_chrpos_min, end_pos: clip_chrpos_max, seq: consensus, depth: read_cnt)
+        consensus_all << consensus_read
+        if @mafft_inputs
+          @mafft_inputs[consensus_read] = group_reads
         end
       end
-      #consensus_all.sort!{|a,b| a.start_pos <=> b.start_pos} # start pos sort
       return consensus_all
     end
 
@@ -193,11 +175,10 @@ module IMSIndel
       align_reads.each do |read_name, align_seq|
         read_name = read_name[1..-1] if read_name.start_with?(">")
         align_seq.each_char.with_index{ |allele, num| check[num] += 1 if allele != "-" }
-        align_reads_names << "#{align_seq}\t#{read_name}"
+        align_reads_names << [align_seq, read_name]
       end
       max_num = check.keys.max
 
-      new_align_reads_names = []
       new_cons = []
       if align_reads_names.size > 2 # multiple-alignmentの場合
         # tcctcgtgg---tcggctaact-------------------------------------------------------  B_136582615_136582615-v90
@@ -229,8 +210,7 @@ module IMSIndel
         end
 
         # align_reads_namesのチェック
-        align_reads_names.each do |align_seq_read_name|
-          align_seq, read_name = align_seq_read_name.split("\t")
+        align_reads_names.each do |align_seq, read_name|
           new_align_seq = ""
           align_seq.each_char.with_index do |seq, num|
             if num <= bef_index || aft_index <= num # 最初と最後のdepth1
@@ -239,7 +219,6 @@ module IMSIndel
               new_align_seq += seq 
             end
           end
-          new_align_reads_names << "#{new_align_seq}\t#{read_name}"
         end
         consensus.each_char.with_index do |seq, num|
           if num <= bef_index or aft_index <= num # 最初と最後のdepth1
@@ -251,13 +230,11 @@ module IMSIndel
 
         # pairwise-alignmentのときは特になにもせずO.K.
       else
-        new_align_reads_names = align_reads_names
         new_cons = [consensus]
       end
       new_cons = new_cons.join("")
-      new_align_reads_names << "#{new_cons}\tCONSENSUS"    
 
-      return new_cons, new_align_reads_names, reads.size
+      return new_cons, reads.size
     end
 
     # find insertion pair from cons_Bs and cons_Fs
@@ -295,7 +272,7 @@ module IMSIndel
         clip_chrpos_all = [consensus_b.start_pos, consensus_b.end_pos, consensus_f.start_pos, consensus_f.end_pos]
         clip_start = clip_chrpos_all.min
         clip_end = clip_chrpos_all.max
-        consensus, align_reads_names, _ = mafft_consensus([consensus_b, consensus_f], 1.0) # %identity = 1.0
+        consensus, _ = mafft_consensus([consensus_b, consensus_f], 1.0) # %identity = 1.0
         consensus, trim_flag = trim_consensus(consensus)
         # ---------------------------------------------------------------------------
 
@@ -313,12 +290,13 @@ module IMSIndel
             bottom_LI = clip_Fs2[clip_F_end]
             consensus = "#{upper_LI}-----#{bottom_LI}"
             if total_depth >= alt_read_depth # end pos is equal to sttpos
-              paired_indel_list << Read.new(:ULI, clip_B_stt, clip_B_stt, consensus, total_depth)
+              paired_indel_list << Read.new(type: :ULI, start_pos: clip_B_stt, end_pos: clip_B_stt, seq: consensus, depth: total_depth)
+              @mafft_inputs[paired_indel_list.last] = [consensus_b, consensus_f] if @mafft_inputs
             end
 
           else # unmap reads exist
             new_group_reads = ([consensus_b, consensus_f] + can_use_unmaps)
-            new_consensus, _, _ = mafft_consensus(new_group_reads, 1.0) # make a consensus seq with the unmapped reads
+            new_consensus, _ = mafft_consensus(new_group_reads, 1.0) # make a consensus seq with the unmapped reads
             new_consensus, trim_flag = trim_consensus(new_consensus)
 
             if new_consensus.empty? || new_consensus.count("?") > 2 # SNP check, if the number of SNPs is more than 2 ( >=3)
@@ -328,28 +306,31 @@ module IMSIndel
               bottom_LI = clip_Fs2[clip_F_end]
               consensus = "#{upper_LI}-----#{bottom_LI}"
               if total_depth >= alt_read_depth # end pos is equal to sttpos
-                paired_indel_list << Read.new(:ULI, clip_B_stt, clip_B_stt, consensus, total_depth)
+                paired_indel_list << Read.new(type: :ULI, start_pos: clip_B_stt, end_pos: clip_B_stt, seq: consensus, depth: total_depth)
+                @mafft_inputs[paired_indel_list.last] = new_group_reads if @mafft_inputs
               end
             else 
-              new_consensus, _, _ = mafft_consensus(new_group_reads, 0.5) # make a consensus seq with the unmapped reads
+              new_consensus, _ = mafft_consensus(new_group_reads, 0.5) # make a consensus seq with the unmapped reads
               new_consensus = trim_consensus_with_flag(new_consensus, trim_flag)
 
               new_total_depth = new_group_reads.inject(0){|res, read| res += read.depth}
               if new_total_depth >= alt_read_depth ####
-                paired_indel_list << Read.new(:LI_wU, clip_start, clip_end, new_consensus, new_total_depth)
+                paired_indel_list << Read.new(type: :LI_wU, start_pos: clip_start, end_pos: clip_end, seq: new_consensus, depth: new_total_depth)
+                @mafft_inputs[paired_indel_list.last] = new_group_reads if @mafft_inputs
               end
             end
           end
 
         else
-          consensus, align_reads_names, _ = mafft_consensus([consensus_b, consensus_f], 0.5) # %identity = 0.5, consensus update
+          consensus, _ = mafft_consensus([consensus_b, consensus_f], 0.5) # %identity = 0.5, consensus update
           consensus = trim_consensus_with_flag(consensus, trim_flag)
 
           #puts "complete long insertion..."
           #puts align_reads_names
           #puts
           if total_depth >= alt_read_depth ####
-            paired_indel_list << Read.new(:LI, clip_start, clip_end, consensus, total_depth)
+            paired_indel_list << Read.new(type: :LI, start_pos: clip_start, end_pos: clip_end, seq: consensus, depth: total_depth)
+            @mafft_inputs[paired_indel_list.last] = [consensus_b, consensus_f] if @mafft_inputs
           end
         end
       end
@@ -361,7 +342,9 @@ module IMSIndel
       del_list_F_dup = del_list_F.dup
       paired_del_list_B = []
       paired_del_list_F = []
-      return paired_indel_list, paired_del_list_B, paired_del_list_F if del_list_B.empty? || del_list_F.empty?
+      if del_list_B.empty? || del_list_F.empty?
+        return paired_indel_list, paired_del_list_B, paired_del_list_F
+      end
 
       del_list_B.each do |readB|
         skip = 0
@@ -373,37 +356,29 @@ module IMSIndel
           break if (readB.end_pos + i_size) < readF.start_pos # indel size == i_size:5000
 
           group_reads = [readB, readF]
-          consensus, align_reads_names = mafft_consensus(group_reads, 1.0)
+          consensus, _ = mafft_consensus(group_reads, 1.0)
           consensus, trim_flag = trim_consensus(consensus)
 
           if consensus.empty? || consensus.count("?") > 2
-            #puts "readB and readF alignment"
-            #align_reads_names.each do |line|
-              #if line.chomp.split("\t")[-1] == "CONSENSUS"
-                #puts "#{line.chomp}\tNOT!!" 
-              #else
-                #puts line
-              #end
-            #end
-            #puts
+            next
           else
-            consensus, align_reads_names = mafft_consensus(group_reads, 0.5) # update, consensus
+            consensus, _ = mafft_consensus(group_reads, 0.5) # update, consensus
             consensus = trim_consensus_with_flag(consensus, trim_flag)
 
             clip_chrpos_all = [readB.start_pos, readB.end_pos, readF.start_pos, readF.end_pos]
             ttl_depth = readB.depth + readF.depth
-            paired_indel_list << Read.new(:LD, clip_chrpos_all.min, clip_chrpos_all.max, consensus, ttl_depth) if ttl_depth >= alt_read_depth #########
+            if ttl_depth >= alt_read_depth
+              paired_indel_list << Read.new(type: :LD, start_pos: clip_chrpos_all.min,
+                                            end_pos: clip_chrpos_all.max, seq: consensus, depth: ttl_depth)
 
+              @mafft_inputs[paired_indel_list.last] = group_reads if @mafft_inputs
+            end
             paired_del_list_B << readB
             paired_del_list_F << readF
-
             #puts "paired long deletion..."
-            #puts align_reads_names
-            #puts
             del_list_F_dup = del_list_F_dup[skip..-1] # update
             skip = 0
           end
-
         end
       end
       return paired_indel_list, paired_del_list_B, paired_del_list_F

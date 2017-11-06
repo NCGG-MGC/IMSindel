@@ -2,6 +2,7 @@ require_relative 'ims_indel/read_collector'
 require_relative 'ims_indel/read_group'
 require_relative 'ims_indel/consensus'
 require_relative 'ims_indel/indel_detector'
+require 'pathname'
 
 module IMSIndel
   class App
@@ -15,6 +16,7 @@ module IMSIndel
       run_collect_unmapped_reads(reads)
       read_group = run_make_read_groups(reads)
       consensus = run_make_consensus_support_reads(read_group)
+      read_group = nil
       run_make_consensus(reads, consensus)
       run_detect_indels(consensus)
     end
@@ -52,7 +54,7 @@ module IMSIndel
 
     def run_make_read_groups(reads)
       puts ">3. considering support reads..."
-      read_group = ReadGroup.new(reads, @config[:within], @config[:support_reads])
+      read_group = ReadGroup.new(reads, @config[:within], @config[:support_reads], @config[:support_clip_length])
 
       puts "#backward clip with support reads:\t#{read_group.backward_clips.size}"
       puts "#forward clip with support reads:\t#{read_group.forward_clips.size}"
@@ -63,7 +65,7 @@ module IMSIndel
 
     def run_make_consensus_support_reads(read_group)
       puts ">4. making consensus seqs from support reads..."
-      consensus = Consensus.new(@config[:temp], @config[:thread], @config[:mafft])
+      consensus = Consensus.new(@config[:temp], @config[:thread], @config[:mafft], !@config[:output_consensus_seq].nil?)
       consensus.make_support_read_consensus(read_group, @config[:alt_read_depth])
       puts "#backward clip with consensus:\t#{read_group.backward_clips.size} --> #{consensus.backward_clip_consensus.size}"
       puts "#forward clip with consensus:\t#{read_group.forward_clips.size} --> #{consensus.forward_clip_consensus.size}"
@@ -83,7 +85,7 @@ module IMSIndel
       puts "#paired long indel candidates:\t#{consensus.paired_long_insertions.size}"
       puts "#unpaired long indel candidates:\t#{consensus.unpaired_long_indels.size}"
       puts "#short indel candidates:\t#{consensus.short_indel_consensus.size}"
-      outf = "#{@config[:outd]}/#{@config[:chr]}.out"
+      outf = Pathname.new(@config[:outd]) + "#{@config[:chr]}.out"
       indel_detector = IndelDetector.new(@config[:glsearch], @config[:glsearch_mat], @config[:samtools], @config[:temp])
       indel_detector.indel_call(consensus.indel_list,
                                 @config[:chr],
@@ -92,8 +94,13 @@ module IMSIndel
                                 @config[:bam],
                                 @config[:mapq],
                                 @config[:alt_read_depth],
-                                outf)
+                                outf.to_s)
       puts ">6. detection of indels...done"
+      if @config[:output_consensus_seq]
+        puts ">7. writing consensus seq..."
+        indel_detector.write_indel_reads(@config[:output_consensus_seq], @config[:chr], consensus)
+        puts ">7. writing consensus seq...done"
+      end
     end
 
     def print_config
@@ -104,6 +111,7 @@ module IMSIndel
       puts "paired B and F:\twithin #{@config[:pair_within]}bp"
       puts "Support reads for making consensus sequence:\t#{@config[:support_reads]}"
       puts "mimimum clipping fragment base:\t#{@config[:clip_length]}bp"
+      puts "support clip length:\t#{@config[:support_clip_length]}bp"
       puts "bam:\t#{@config[:bam]}"
       puts "chr:\t#{@config[:chr]}"
       puts "outd:\t#{@config[:outd]}"
@@ -119,19 +127,20 @@ module IMSIndel
 
     def default_config
       {
-        baseq:          20, # avg base quality in clipping seqs or in unmapped reads
-        mapq:           20, # mapping quality
-        within:         3,  # readをgroupingする際のbase数: 5bp以内をgrouping
-        pair_within:    5,  # LIのpairを作る時: 5bp以内をgrouping
-        alt_read_depth: 5,  # alt read depth(non-ref)のminimum数
-        support_reads:  3,  # groupingする際のminimum read数
-        clip_length:    5,  # clipping fragmentのmimimum base数
-        glsearch:       'glsearch36',
-        glsearch_mat:   File.join(File.expand_path("", File.dirname(__FILE__)), "..", "data", "mydna.mat"),
-        mafft:          'mafft',
-        samtools:       'samtools',
-        temp:           Dir.tmpdir,
-        thread:         1,
+        baseq:               20, # avg base quality in clipping seqs or in unmapped reads
+        mapq:                20, # mapping quality
+        within:              3,  # readをgroupingする際のbase数: 5bp以内をgrouping
+        pair_within:         5,  # LIのpairを作る時: 5bp以内をgrouping
+        alt_read_depth:      5,  # alt read depth(non-ref)のminimum数
+        support_reads:       3,  # groupingする際のminimum read数
+        clip_length:         5,  # clipping fragmentのmimimum base数
+        support_clip_length: 5,  # read group clipping fragmentのmimimum base数
+        glsearch:            'glsearch36',
+        glsearch_mat:        File.join(File.expand_path("", File.dirname(__FILE__)), "..", "data", "mydna.mat"),
+        mafft:               'mafft',
+        samtools:            'samtools',
+        temp:                Dir.tmpdir,
+        thread:              1,
       }
     end
   end

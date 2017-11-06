@@ -1,11 +1,12 @@
 class IMSIndel::Read
-  attr_reader :type, :start_pos, :end_pos, :seq, :depth
+  attr_reader :type, :start_pos, :end_pos, :seq, :soft_clip_len, :depth
 
-  def initialize(type, start_pos, end_pos, seq, depth = 0)
+  def initialize(type:, start_pos:, end_pos:, seq:, soft_clip_len: nil, depth: 0)
     @type = type
     @start_pos = start_pos
     @end_pos = end_pos
     @seq = seq
+    @soft_clip_len = soft_clip_len
     @depth = depth
   end
 

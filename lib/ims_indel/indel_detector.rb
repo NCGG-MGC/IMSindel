@@ -1,4 +1,5 @@
 require_relative 'pairwise_consensus'
+require 'pathname'
 
 module IMSIndel
   class IndelDetector
@@ -24,7 +25,23 @@ module IMSIndel
       all_pos_depth = count_depth(all_pos, bam_path, target_chr, mapq)
       puts "#all_pos_depth #{all_pos_depth.size}"
 
+      @fin_indels = fin_indels
       final_indel_call(fin_indels, all_pos_depth, outf, target_chr, alt_read_depth)
+    end
+
+    def write_indel_reads(outd, target_chr, consensus)
+      mafft_inputs =  consensus.mafft_inputs
+      outd = Pathname.new(outd)
+      @fin_indels.each do |key, indels|
+        File.open(outd + "#{target_chr}_#{key}.fasta", 'w') do |out|
+          indels.each do |indel|
+            mafft_inputs[indel.base_read].each_with_index do |i, index|
+              out.puts ">#{i.type}_#{i.start_pos}_#{i.end_pos}-v#{index}"
+              out.puts i.seq
+            end
+          end
+        end
+      end
     end
 
     private
@@ -32,16 +49,16 @@ module IMSIndel
     # indelの開始終了情報 struct
     IndelInfo = Struct.new(:start, :end, :str, :is_same, :key)
     # 見つかったindel struct
-    IndelResult = Struct.new(:indel_type, :flag, :depth, :start_pos, :seq)
+    IndelResult = Struct.new(:indel_type, :flag, :depth, :start_pos, :seq, :base_read)
 
     # compared with reference seq, detect indels precisely
     def detect_indels(indel_list, target_chr, max_indel_size, reffa)
-      @fin_indels = Hash.new {|h,k| h[k] = [] } # {31973646_31973663_tgttatttataataatga" => ["INS_SID_18(depth)_indelsttpos_seq", ..
+      fin_indels = Hash.new {|h,k| h[k] = [] } # {31973646_31973663_tgttatttataataatga" => ["INS_SID_18(depth)_indelsttpos_seq", ..
       @is_checked_pos = {} # same Indel check (temprary use)
-      @all_pos    = []
+      all_pos    = []
       pairwise_consensus = PairwiseConsensus.new(@glsearch_bin, @glsearch_mat, @temp_path)
 
-      ttl_indel = indel_list.size
+      #ttl_indel = indel_list.size
       indel_list.each_with_index do |read, index| # read = [":LI(or :ULI or :LD or :B or :F or :SID), clip_chrpos_all.min, clip_chrpos_all.max, consensus, ttl_depth]
         flag = read.type
         sttpos = read.start_pos
@@ -53,13 +70,13 @@ module IMSIndel
           key = "#{sttpos}_#{endpos}"
           if @is_checked_pos[key]
             #puts "#{index+1}/#{ttl_indel}\t#{flag}_#{sttpos}-#{endpos}\t#{seq}\t#{seq.size-5}+\tdepth: #{depth}: INS\tSAME\n"
-            @fin_indels[key] << IndelResult.new("INS", flag, depth, sttpos, seq)
-            @all_pos << sttpos
+            fin_indels[key] << IndelResult.new("INS", flag, depth, sttpos, seq, read)
+            all_pos << sttpos
           else
             @is_checked_pos[key] = true
             #puts "#{index+1}/#{ttl_indel}\t#{flag}_#{sttpos}-#{endpos}\t#{seq}\t#{seq.size-5}+\tdepth: #{depth}: INS\n"
-            @fin_indels[key] << IndelResult.new("INS", flag, depth, sttpos, seq)
-            @all_pos << sttpos
+            fin_indels[key] << IndelResult.new("INS", flag, depth, sttpos, seq, read)
+            all_pos << sttpos
           end
           next
         end
@@ -110,8 +127,8 @@ module IMSIndel
           sec_gap = $4.size
           next unless /(^\-+)(\w+)(\-+)$/ =~ read_seq
           indel_info = process_long_insersion(fir_gap, fir_str, sec_gap, sec_str, read_seq, ref_name, ref_seq)
-          @fin_indels[indel_info.key] << IndelResult.new("INS", flag, depth, indel_stt, indel_info.str)
-          @all_pos << indel_stt
+          fin_indels[indel_info.key] << IndelResult.new("INS", flag, depth, indel_stt, indel_info.str, read)
+          all_pos << indel_stt
           #puts_indel_info("INS", ref_seq, read_seq, index, ttl_indel, align_reads_names, flag, depth, indel_info)
 
         elsif /(^\w+)(-+)(\w+)$/ =~ ref_seq # ref = cagaaaaa-----ccagtcccgttctaaccagtcccgttctaa
@@ -138,8 +155,8 @@ module IMSIndel
             next
           end
           indel_info = process_right_insersion(fir_gap, fir_str, sec_gap, sec_str, read_seq, ref_name, ref_seq)
-          @fin_indels[indel_info.key] << IndelResult.new("INS",  flag, depth, indel_stt, indel_info.str)
-          @all_pos << indel_stt
+          fin_indels[indel_info.key] << IndelResult.new("INS", flag, depth, indel_stt, indel_info.str, read)
+          all_pos << indel_stt
           #puts_indel_info("INS", ref_seq, read_seq, index, ttl_indel, align_reads_names, flag, depth, indel_info)
 
         elsif ref_seq.count("-") == 0
@@ -163,8 +180,8 @@ module IMSIndel
               next
             end
             indel_info = process_deletion(fir_gap, fir_str, sec_gap, sec_str, read_seq, ref_name, ref_seq)
-            @fin_indels[indel_info.key] << IndelResult.new("DEL", flag, depth, indel_stt, indel_info.str)
-            @all_pos << indel_stt
+            fin_indels[indel_info.key] << IndelResult.new("DEL", flag, depth, indel_stt, indel_info.str, read)
+            all_pos << indel_stt
           else
             #puts "Ref\t#{ref_seq}\nSeq\t#{read_seq}"
             #puts "#{index+1}/#{ttl_indel}\t#{align_reads_names[-1]}"
@@ -173,9 +190,9 @@ module IMSIndel
         end
       end
       @is_checked_pos = nil
-      @all_pos.sort!
-      @all_pos.uniq!
-      return @all_pos, @fin_indels
+      all_pos.sort!
+      all_pos.uniq!
+      return all_pos, fin_indels
     end
 
     # count refeerence allele depth

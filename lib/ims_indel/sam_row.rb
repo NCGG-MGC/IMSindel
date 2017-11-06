@@ -55,7 +55,7 @@ module IMSIndel
       return unless acceptable_base_qaul?(@base_qual[-len_s, len_s], min_bq)
 
       len_m = match[1].to_i
-      [:B, @read_seq[-len_s, len_s], @chrpos + len_m - 1]
+      [:B, @read_seq[-len_s, len_s], @chrpos + len_m - 1, len_s]
     end
 
     def backward_flagment_short_ins(match, min_len, min_bq) # B fragment (short INS + clip seq)
@@ -65,7 +65,7 @@ module IMSIndel
 
       len_m1  = match[1].to_i
       len_m2  = match[3].to_i
-      [:B, @read_seq[-len_s, len_s], @chrpos + len_m1 + len_m2 - 1]
+      [:B, @read_seq[-len_s, len_s], @chrpos + len_m1 + len_m2 - 1, len_s]
     end
 
     def backward_flagment_short_del(match, min_len, min_bq) # B fragment (short DEL + clip seq)
@@ -76,7 +76,7 @@ module IMSIndel
       len_m1  = match[1].to_i
       len_d   = match[2].to_i
       len_m2  = match[3].to_i
-      [:B, @read_seq[-len_s, len_s], @chrpos + len_m1 + len_d + len_m2 - 1]
+      [:B, @read_seq[-len_s, len_s], @chrpos + len_m1 + len_d + len_m2 - 1, nil]
     end
 
     def forward_flagment(match, min_len, min_bq) # F fragment (clip seq + match)
@@ -84,29 +84,25 @@ module IMSIndel
       return if len_s <= min_len
       return unless acceptable_base_qaul?(@base_qual[0, len_s], min_bq)
 
-      len_m = match[2].to_i
-      [:F, @read_seq[0, len_s], @chrpos]
+      [:F, @read_seq[0, len_s], @chrpos, len_s]
     end
 
     def short_insertion(match, min_len, min_bq)
       len_m1  = match[1].to_i
       len_ins = match[2].to_i
-      len_m2  = match[3].to_i
-      len = len_m1 + len_ins + len_m2
 
       start_pos = len_m1
       end_pos = len_m1 + len_ins - 1
-      [:SI, @read_seq[start_pos..end_pos], @chrpos + len_m1 - 1]
+      [:SI, @read_seq[start_pos..end_pos], @chrpos + len_m1 - 1, nil]
     end
 
     def short_deletion(match, min_len, min_bq)
       len_m1  = match[1].to_i
       len_del = match[2].to_i
-      len_m2  = match[3].to_i
 
       start_pos = len_m1
       end_pos = len_m1 + len_del - 1
-      [:SD, @read_seq[start_pos..end_pos], @chrpos + len_m1 - 1]
+      [:SD, @read_seq[start_pos..end_pos], @chrpos + len_m1 - 1, nil]
     end
   end
 end

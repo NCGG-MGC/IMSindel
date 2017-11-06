@@ -44,23 +44,23 @@ module IMSIndel
            max_read_size = n if n > max_read_size
         end
 
-        type, clipped_seq, clipped_pos = line.clip_seq(clip_length, base_quality_threshold)
+        type, clipped_seq, clipped_pos, soft_clip_len = line.clip_seq(clip_length, base_quality_threshold)
         case type
         when nil
           next
         when :SI
-          non_clips << Read.new(type, clipped_pos, clipped_pos, line.read_seq)
+          non_clips << Read.new(type: type, start_pos: clipped_pos, end_pos: clipped_pos, seq: line.read_seq, soft_clip_len: soft_clip_len)
         when :SD
           start_pos = clipped_pos
           end_pos = start_pos + clipped_seq.size - 1
-          non_clips << Read.new(type, start_pos, end_pos, line.read_seq)
+          non_clips << Read.new(type: type, start_pos: start_pos, end_pos: end_pos, seq: line.read_seq, soft_clip_len: soft_clip_len)
         when :B
-          backward_clips << Read.new(type, clipped_pos, clipped_pos, line.read_seq)
+          backward_clips << Read.new(type: type, start_pos: clipped_pos, end_pos: clipped_pos, seq: line.read_seq, soft_clip_len: soft_clip_len)
           if !pos2max_backward_clip.has_key?(clipped_pos) || pos2max_backward_clip[clipped_pos].size < clipped_seq.size
             pos2max_backward_clip[clipped_pos] = clipped_seq
           end
         when :F
-          forward_clips << Read.new(type, clipped_pos, clipped_pos, line.read_seq)
+          forward_clips << Read.new(type: type, start_pos: clipped_pos, end_pos: clipped_pos, seq: line.read_seq, soft_clip_len: soft_clip_len)
           if !pos2max_forward_clip.has_key?(clipped_pos) || pos2max_forward_clip[clipped_pos].size < clipped_seq.size
             pos2max_forward_clip[clipped_pos] = clipped_seq
           end
@@ -104,7 +104,7 @@ module IMSIndel
           next unless read_seq
         end
         #puts [start_pos, end_pos, read_seq]
-        unmapped_reads << Read.new(:U, start_pos, end_pos, read_seq)
+        unmapped_reads << Read.new(type: :U, start_pos: start_pos, end_pos: end_pos, seq: read_seq)
       end
       unmapped_reads.sort! { |a, b| a.start_pos <=> b.start_pos }
       @unmapped_reads = unmapped_reads

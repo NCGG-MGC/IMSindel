@@ -1,19 +1,19 @@
 class IMSIndel::ReadGroup
   attr_reader :backward_clips, :forward_clips, :non_clips
 
-  def initialize(reads, within, support_reads)
+  def initialize(reads, within, support_reads, support_clip_length)
     @backward_clips, backward_non_clips =
-       classify(reads.backward_clips + reads.non_clips, within, support_reads)
+       classify(reads.backward_clips + reads.non_clips, within, support_reads, support_clip_length)
     @forward_clips, forward_non_clips =
-       classify(reads.forward_clips + reads.non_clips, within, support_reads)
+       classify(reads.forward_clips + reads.non_clips, within, support_reads, support_clip_length)
     @non_clips = make_unique_clips(backward_non_clips, forward_non_clips)
   end
 
   private
 
   # grouping reads within 3bp
-  def classify(reads, within, support_reads)
-    read_groups = grouping_reads(reads, within, support_reads) 
+  def classify(reads, within, support_reads, support_clip_length)
+    read_groups = grouping_reads(reads, within, support_reads, support_reads)
     clips = [] #  without SID reads
     non_clips = []
 
@@ -28,7 +28,7 @@ class IMSIndel::ReadGroup
     return clips, non_clips
   end
 
-  def grouping_reads(reads, within, support_reads)
+  def grouping_reads(reads, within, support_reads, support_clip_length)
     # 1. grouping the reads within 3bp
     sorted_reads = reads.sort{ |a, b| a.start_pos <=> b.start_pos }
     mixed_groups = sorted_reads.inject([]) do |acc, read|
@@ -62,8 +62,14 @@ class IMSIndel::ReadGroup
       end
     end
 
-    # 3. check if the number of support reads is more than 2
-    return read_groups.find_all { |reads| reads.size >= support_reads }
+    # 3. check if the number of support reads is more than support_reads
+    #    and check any read has soft clip length > support_clip_length
+    return read_groups.find_all { |group| group.size >= support_reads }
+    #return read_groups.find_all { |group|
+      #group.size >= support_reads &&
+        #(group.all? { |read| read.soft_clip_len.nil? } || # no sof clip
+        #group.any?{ |read| read.soft_clip_len.to_i > support_clip_length })
+    #}
   end
 
   def make_unique_clips(backward_non_clips, forward_non_clips)
