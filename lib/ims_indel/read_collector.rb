@@ -68,7 +68,7 @@ module IMSIndel
         insert_sizes << line.insert_size if line.insert_size > 0
       end
 
-      calc_stats(insert_sizes)
+      calc_stats(insert_sizes) unless insert_sizes.empty?
       @max_read_size = max_read_size
       @non_clips = non_clips
       @backward_clips = backward_clips
