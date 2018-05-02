@@ -9,7 +9,7 @@
 
 ## usage
 
-```shell
+```console
 $ bin/imsindel --bam foo.bam --chr 1 --outd out --indelsize 10000 --reffa ref.fa
 ```
 
@@ -17,7 +17,7 @@ $ bin/imsindel --bam foo.bam --chr 1 --outd out --indelsize 10000 --reffa ref.fa
 
 #### build image
 
-```shell
+```console
 $ git clone https://github.com/NCGG-MGC/IMSindel.git
 $ cd IMSindel
 $ docker build -t imsindel .
@@ -25,7 +25,7 @@ $ docker build -t imsindel .
 
 #### run imsindel
 
-```shell
+```console
 $ mkdir /pat/to/data
 $ mv /path/to/your.bam /path/to/data/
 $ samtools index /path/to/data/your.bam
