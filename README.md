@@ -9,8 +9,26 @@
 
 ## usage
 
+```shell
+$ bin/imsindel --bam foo.bam --chr 1 --outd out --indelsize 10000 --reffa ref.fa
 ```
-  bin/imsindel --bam foo.bam --chr 1 --outd out --indelsize 10000 --reffa ref.fa
+
+### run on docker
+
+#### build image
+
+```shell
+$ docker build -t imsindel .
+```
+
+#### run imsindel
+
+```shell
+$ mkdir /pat/to/data
+$ mv /path/to/your.bam /path/to/data/
+$ samtools index /path/to/data/your.bam
+$ mv /path/to/ref.fa /path/to/data/
+$ docker run --rm -v /path/to/data:/data imsindel --bam /data/your.bam --chr 1 --outd /data --indelsize 10000 --reffa /data/ref.fa
 ```
 
 ## options
