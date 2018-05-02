@@ -10,15 +10,29 @@ module IMSIndel
       @config = default_config.merge(config)
     end
 
+    def check_input
+      unless File.exist?(@config[:reffa])
+        puts("#{@config[:reffa]}: No such file")
+        return false
+      end
+      unless File.exist?(@config[:bam])
+        puts("#{@config[:bam]}: No such file")
+        return false
+      end
+      return true
+    end
+
     def run
+      check_input || (return -1)
       reads = ReadCollector.new(@config[:samtools])
-      run_collect_indel_reads(reads) || return
+      run_collect_indel_reads(reads) || (return 0)
       run_collect_unmapped_reads(reads)
       read_group = run_make_read_groups(reads)
       consensus = run_make_consensus_support_reads(read_group)
       read_group = nil
       run_make_consensus(reads, consensus)
       run_detect_indels(consensus)
+      return 0
     end
 
     def run_collect_indel_reads(reads)
@@ -123,6 +137,7 @@ module IMSIndel
       puts "samtools:\t#{@config[:samtools]}"
       puts "temp:\t#{@config[:temp]}"
       puts "thread:\t#{@config[:thread]}"
+      puts
     end
 
     def default_config

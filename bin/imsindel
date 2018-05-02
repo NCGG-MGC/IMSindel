@@ -40,4 +40,4 @@ end
 require_relative '../lib/ims_indel'
 app = IMSIndel::App.new(config)
 app.print_config
-app.run
+exit(app.run)
