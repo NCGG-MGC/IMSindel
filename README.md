@@ -26,7 +26,7 @@ $ docker build -t imsindel .
 #### run imsindel
 
 ```console
-$ mkdir /pat/to/data
+$ mkdir /path/to/data
 $ mv /path/to/your.bam /path/to/data/
 $ samtools index /path/to/data/your.bam
 $ mv /path/to/ref.fa /path/to/data/
