@@ -18,6 +18,8 @@ $ bin/imsindel --bam foo.bam --chr 1 --outd out --indelsize 10000 --reffa ref.fa
 #### build image
 
 ```shell
+$ git clone https://github.com/NCGG-MGC/IMSindel.git
+$ cd IMSindel
 $ docker build -t imsindel .
 ```
 
