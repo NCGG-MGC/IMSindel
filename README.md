@@ -57,3 +57,20 @@ $ docker run --rm -v /path/to/data:/data imsindel --bam /data/your.bam --chr 1 -
 * --temp temp-dir-for-mafft-and-glsearch [/tmp]
 * --thread number-of-mafft-threads [1]
 * --output-consensus-seq /path/to/output-dir
+
+## output
+
+#|column|description
+-----|------|-----------
+1|indel_type|DEL=deletion, INS=insertion
+2|call_type|Hete=heterozygous indel, Homo=homozygous indel
+3|chr|chromosome number
+4|sttpos|indel’s start position
+5|endpos|indel’s end position
+6|indel_length|indel size
+7|indel_str|indel sequence
+8|#indel_depth|read count including indels
+9|#ttl_depth|total read count
+10|details(indelcall_indeltype_depth)|composed of four components; <br> 1. Indel_type <br> 2. LI=long insertion, ULI=uncomplete long insertion, LD=long deletion, B: clipped fragments on the right side of read sequences, F: clipped fragments on the left side of read sequences, SI: short indel, <br> 3. #indel_depth, <br> 4. clip_sttpos
+11|clip_sttpos|clipped fragments’ start position
+12|depth(>=10)|High if #total depth >=10
