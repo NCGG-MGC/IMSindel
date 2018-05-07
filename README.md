@@ -1,7 +1,9 @@
 # IMSIndel
 
+
 ## depend tools
 
+* [ruby (2.3 or higher)](https://www.ruby-lang.org/en/)
 * [samtools](https://github.com/samtools/samtools)
 * [mafft](http://mafft.cbrc.jp/alignment/software/)
 * [glsearch](http://fasta.bioch.virginia.edu/fasta_www2/fasta_down.shtml)
