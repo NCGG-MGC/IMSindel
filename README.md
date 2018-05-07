@@ -63,7 +63,7 @@ $ docker run --rm -v /path/to/data:/data imsindel --bam /data/your.bam --chr 1 -
 #|column|description
 -----|------|-----------
 1|indel_type|DEL=deletion, INS=insertion
-2|call_type|Hete=heterozygous indel, Homo=homozygous indel
+2|call_type|Hete=heterozygous indel(0.15<#indel_depth/#ttl_depth<=0.7), Homo=homozygous indel(#indel_depth/#ttl_depth>0.7)
 3|chr|chromosome number
 4|sttpos|indel’s start position
 5|endpos|indel’s end position
