@@ -1,5 +1,6 @@
 require 'bio'
 require 'tempfile'
+require 'open3'
 require_relative 'read'
 require_relative 'consensus_util'
 
@@ -138,12 +139,23 @@ module IMSIndel
         tmp.puts ">#{read_inf.type}_#{read_inf.start_pos}_#{read_inf.end_pos}-v#{index}"
         tmp.puts read_inf.seq.upcase
       end
-      tmp.close
-      td = @temp_path ? "TMPDIR=#{@temp_path}" : ""
-      res =`#{td} #{@mafft} --nuc --ep 0.0 --op 1 --genafpair --maxiterate 1000 #{tmp.path} 2>/dev/null`
+      tmp.flush
+
+      env = {}
+      if @temp_path && !@temp_path.empty?
+        env['TMPDIR'] = @temp_path
+      end
+      res, err, status = Open3.capture3(env,
+                                        @mafft,
+                                        '--nuc',
+                                        '--ep', '0.0',
+                                        '--op', '1',
+                                        '--genafpair',
+                                        '--maxiterate', '1000',
+                                        tmp.path)
       tmp.close(true)
-      unless $?.success?
-        raise "mafft exec error: #{$?}"
+      unless status.success?
+        raise "mafft exec error: #{status}\nmafft stderr: #{err}"
       end
 
       # makeing a consensus seq
