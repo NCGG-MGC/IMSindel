@@ -21,8 +21,7 @@ module IMSIndel
     end
 
     def collect_clip_indel_reads(bam, chr, map_quality_threshold,
-                                 base_quality_threshold, clip_length)
-
+                                 base_quality_threshold, clip_length, exclude_region_path)
       max_read_size = 0
       non_clips = []
       backward_clips = []
@@ -31,12 +30,22 @@ module IMSIndel
       pos2max_backward_clip = {}
       pos2max_forward_clip = {}
 
+      if exclude_region_path
+        exclude_regions = load_exclude_regions(exclude_region_path, chr)
+        puts "#exclude regions:\t#{exclude_regions.size}"
+      end
+
       sam = SAMReader.new(@samtools, bam)
       sam.each(chr: chr, filter_flag: SAMReader::DUPLICATE,
                          output_flag: SAMReader::PROPER_PAIR) do |line|
 
         if line.map_score <= map_quality_threshold || line.read_seq.include?('N')
           next
+        end
+
+        if exclude_regions
+          r = in_region?(exclude_regions, line.chrpos, line.chrpos + line.read_seq.size)
+          next if r
         end
 
         if line.map_status =~ /\A(\d+)M\z/
@@ -155,6 +164,31 @@ module IMSIndel
           line.flagged?(SAMReader::REVERSE_STRAND) ? :backward : :forward
       end
       unmapped_read_names
+    end
+
+    def load_exclude_regions(path, target_chr)
+      regions = []
+      File.open(path) do |f|
+        f.each_line do |line|
+          chr, start_pos, end_pos = line.split(/\s+/)
+          next unless chr == target_chr
+          regions << [start_pos.to_i, end_pos.to_i]
+        end
+      end
+      regions.sort { |a, b| a[0] <=> b[0] }
+    end
+
+    def in_region?(regions, start_pos, end_pos)
+      r = regions.bsearch do |x|
+        if x[0] > end_pos
+          -1
+        elsif x[1] < start_pos
+          1
+        else
+          0
+        end
+      end
+      return r
     end
   end
 end

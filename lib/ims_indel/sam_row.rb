@@ -5,7 +5,7 @@ module IMSIndel
 
     def initialize(line)
       @read_name, @flag, @chr, chrpos, map_score, @map_status, _, _,
-      insert_size, @read_seq, @base_qual, _ = line.split("\t", 12)
+        insert_size, @read_seq, @base_qual,  = line.split("\t", 12)
 
       @map_score   = map_score.to_i
       @insert_size = insert_size.to_i

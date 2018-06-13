@@ -26,6 +26,7 @@ OptionParser.new do |opt|
   opt.on('--temp [/temp]') {|v| config[:temp] = v}
   opt.on('--thread [1]') {|v| config[:thread] = v.to_i}
   opt.on('--output-consensus-seq /path/to/output-dir') {|v| config[:output_consensus_seq] = v}
+  opt.on('--exclude-region /path/to/exclude-list') {|v| config[:exclude_region] = v}
 
   opt.parse!(ARGV)
   required.each do |o|

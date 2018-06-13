@@ -38,8 +38,12 @@ module IMSIndel
     def run_collect_indel_reads(reads)
       puts ">1. collecting indel related reads..."
 
-      is_empty = reads.collect_clip_indel_reads(@config[:bam], @config[:chr], @config[:mapq],
-                                                @config[:baseq], @config[:clip_length])
+      is_empty = reads.collect_clip_indel_reads(@config[:bam],
+                                                @config[:chr],
+                                                @config[:mapq],
+                                                @config[:baseq],
+                                                @config[:clip_length],
+                                                @config[:exclude_region])
 
       puts "#backward_clips:\t#{reads.backward_clips.size}"
       #puts "#pos2max_back_soft_clip:\t#{indel_reads.pos2max_back_soft_clip.size}"
@@ -137,6 +141,7 @@ module IMSIndel
       puts "samtools:\t#{@config[:samtools]}"
       puts "temp:\t#{@config[:temp]}"
       puts "thread:\t#{@config[:thread]}"
+      puts "exclude-region:\t#{@config[:exclude_region]}"
       puts
     end
 
