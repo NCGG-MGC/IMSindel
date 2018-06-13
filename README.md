@@ -57,6 +57,7 @@ $ docker run --rm -v /path/to/data:/data imsindel --bam /data/your.bam --chr 1 -
 * --temp temp-dir-for-mafft-and-glsearch [/tmp]
 * --thread number-of-mafft-threads [1]
 * --output-consensus-seq /path/to/output-dir
+* --exclude-region /path/to/exclude-list
 
 ## output
 
@@ -74,3 +75,10 @@ $ docker run --rm -v /path/to/data:/data imsindel --bam /data/your.bam --chr 1 -
 10|details(indelcall_indeltype_depth)|composed of four components; <br> 1. Indel_type <br> 2. LI=long insertion, ULI=uncomplete long insertion, LD=long deletion, B: clipped fragments on the right side of read sequences, F: clipped fragments on the left side of read sequences, SI: short indel, <br> 3. #indel_depth, <br> 4. clip_sttpos
 11|clip_sttpos|clipped fragments’ start position
 12|depth(>=10)|High if #total depth >=10
+
+
+## update
+
+* 2018/6/13
+  * add exclude-region option
+  * add mafft error log
