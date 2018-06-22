@@ -57,7 +57,7 @@ $ docker run --rm -v /path/to/data:/data imsindel --bam /data/your.bam --chr 1 -
 * --temp temp-dir-for-mafft-and-glsearch [/tmp]
 * --thread number-of-mafft-threads [1]
 * --output-consensus-seq /path/to/output-dir
-* --exclude-region /path/to/exclude-list
+* --exclude-region /path/to/exclude-list(bed like format 1-started)
 
 ## output
 
