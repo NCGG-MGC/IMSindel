@@ -73,6 +73,7 @@ module IMSIndel
       ts = []
       total_size = clips.size
       nthreads = [@thread, total_size].min
+      nthreads = 1 if nthreads == 0
       i = 1
       clips.each_slice(clips.size / nthreads) do |slice|
         j = i + slice.size
