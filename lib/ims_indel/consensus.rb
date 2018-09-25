@@ -72,6 +72,10 @@ module IMSIndel
     def make_consensus_with_threads(clips, read_type, alt_read_depth)
       ts = []
       total_size = clips.size
+      if total_size == 0
+        puts 'missing indels'
+        return []
+      end
       nthreads = [@thread, total_size].min
       nthreads = 1 if nthreads == 0
       i = 1
