@@ -105,7 +105,7 @@ module IMSIndel
         type = mate_unmapped_read_names[line.read_name]
         if type == :forward
           start_pos = line.chrpos + @max_read_size - @max_insert_size
-          end_pos = chrpos
+          end_pos = line.chrpos
         elsif type == :backward
           start_pos = line.chrpos + @min_insert_size
           end_pos = line.chrpos + @max_insert_size
