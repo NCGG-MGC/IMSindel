@@ -46,7 +46,7 @@ module IMSIndel
           unless gap_flags[id].nil?
             seq = line[7..-1] # "  AAAA----" or "AAA-----" or
             if gap_flags[id].empty? && !id.start_with?('R') # id[0..0] != "R" # seqのほう
-              gap_count = seq.count("\s")
+              gap_count = seq.rstrip.count("\s")
             end
             seq = seq.tr("\s", "-") # " "を"-"に変更
             gap_flags[id] += seq
@@ -60,7 +60,11 @@ module IMSIndel
       align_seq = ''
       align_ref = ''
       sttpos   = sttpos - gap_count - 1
-      ref_head = reads.last.last[0..(sttpos-1)]
+      if sttpos < 1
+        ref_head = ""
+      else
+        ref_head = reads.last.last[0..(sttpos-1)]
+      end
 
       seq_head = "-" * sttpos
       gap_flags.each do |flag, seq|
@@ -102,7 +106,7 @@ module IMSIndel
             unless non_gap_flags[id].nil?
               seq = line[7..-1] # "  AAAA----" or "AAA-----" or
               if non_gap_flags[id].empty? && !id.start_with?('R') #id[0..0] != "R" # seqのほう
-                gap_count = seq.count("\s")
+                gap_count = seq.rstrip.count("\s")
               end
               seq = seq.tr("\s", "-") # " "を"-"に変更
               non_gap_flags[id] += seq
@@ -115,7 +119,11 @@ module IMSIndel
         align_seq = ''
         align_ref = ''
         sttpos = sttpos - gap_count - 1
-        ref_head = reads.last.last[0..(sttpos-1)]
+        if sttpos < 1
+          ref_head = ""
+        else
+          ref_head = reads.last.last[0..(sttpos-1)]
+        end
         seq_head = "-" * sttpos
 
         non_gap_flags.each do |flag, seq|
