@@ -79,6 +79,9 @@ $ docker run --rm -v /path/to/data:/data imsindel --bam /data/your.bam --chr 1 -
 
 ## update
 
+* 2019/12/19
+  * fix fix negative sttpos #10
+  * fix fasta url
 * 2018/6/13
   * add exclude-region option
   * add mafft error log
