@@ -158,6 +158,11 @@ module IMSIndel
                                         '--genafpair',
                                         '--maxiterate', '1000',
                                         tmp.path)
+      if res.nil?
+        tmp.open
+        input = tmp.read
+        raise "invalid mafft result: #{status}\nmafft stdout:\n#{res}\nmafft stderr:\n#{err}\nmafft input:\n#{input}"
+      end
       tmp.close(true)
       unless status.success?
         raise "mafft exec error: #{status}\nmafft stderr: #{err}"
@@ -231,17 +236,17 @@ module IMSIndel
           new_align_seq = ""
           align_seq.each_char.with_index do |seq, num|
             if num <= bef_index || aft_index <= num # 最初と最後のdepth1
-              new_align_seq += seq 
+              new_align_seq += seq
             elsif check[num] != 1
-              new_align_seq += seq 
+              new_align_seq += seq
             end
           end
         end
         consensus.each_char.with_index do |seq, num|
           if num <= bef_index or aft_index <= num # 最初と最後のdepth1
-            new_cons << seq 
-          elsif check[num] != 1  
-            new_cons << seq 
+            new_cons << seq
+          elsif check[num] != 1
+            new_cons << seq
           end
         end
 
