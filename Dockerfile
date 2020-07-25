@@ -1,13 +1,12 @@
-FROM ruby:2.5
+FROM ruby:2.7-slim
 
-RUN apt-get update && \
-    apt-get install -y samtools mafft && \
+RUN set -eux; apt-get update && \
+    apt-get install -y  --no-install-recommends samtools mafft curl && \
     gem install bio && \
     cd /opt && \
     curl -OL http://faculty.virginia.edu/wrpearson/fasta/CURRENT/fasa36-linux64.tar.gz && \
     tar xf fasa36-linux64.tar.gz && \
     mkdir /opt/IMSindel && \
-    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 COPY . /opt/IMSindel/
