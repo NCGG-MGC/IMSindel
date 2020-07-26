@@ -35,7 +35,7 @@ module IMSIndel
     end
 
     def make_consensus_seq(reads, pair_within, alt_read_depth, max_indel_size)
-      # >long insertion 
+      # >long insertion
       # find long insertion pairs:
       # [flg_sttpos_endpos_conseq_readcntB, flg_sttpos_endpos_conseq_readcntF]
       insertion_pair = find_insert_pair(@backward_clip_consensus, @forward_clip_consensus, pair_within)
@@ -50,7 +50,7 @@ module IMSIndel
                                                      reads.unmapped_reads,
                                                      alt_read_depth)
 
-      # >long deletion 
+      # >long deletion
       ins_l_B = insertion_pair.map { |i| i[0] }
       ins_l_F = insertion_pair.map { |i| i[1] }
       del_l_B = @backward_clip_consensus - ins_l_B
@@ -158,10 +158,16 @@ module IMSIndel
                                         '--genafpair',
                                         '--maxiterate', '1000',
                                         tmp.path)
-      tmp.close(true)
       unless status.success?
-        raise "mafft exec error: #{status}\nmafft stderr: #{err}"
+        STDERR.puts("mafft stderr:\n#{err}")
+        tmp.open
+        STDERR.puts("mafft inputs:\n#{tmp.read}")
+        STDERR.puts("mafft output:\n#{res}")
+        STDERR.puts("mafft exec error: #{status}")
+        tmp.close!
+        exit(1)
       end
+      tmp.close!
 
       # makeing a consensus seq
       align_reads = {}
@@ -231,17 +237,17 @@ module IMSIndel
           new_align_seq = ""
           align_seq.each_char.with_index do |seq, num|
             if num <= bef_index || aft_index <= num # 最初と最後のdepth1
-              new_align_seq += seq 
+              new_align_seq += seq
             elsif check[num] != 1
-              new_align_seq += seq 
+              new_align_seq += seq
             end
           end
         end
         consensus.each_char.with_index do |seq, num|
           if num <= bef_index or aft_index <= num # 最初と最後のdepth1
-            new_cons << seq 
-          elsif check[num] != 1  
-            new_cons << seq 
+            new_cons << seq
+          elsif check[num] != 1
+            new_cons << seq
           end
         end
 
@@ -326,7 +332,7 @@ module IMSIndel
                 paired_indel_list << Read.new(type: :ULI, start_pos: clip_B_stt, end_pos: clip_B_stt, seq: consensus, depth: total_depth)
                 @mafft_inputs[paired_indel_list.last] = new_group_reads if @mafft_inputs
               end
-            else 
+            else
               new_consensus, _ = mafft_consensus(new_group_reads, 0.5) # make a consensus seq with the unmapped reads
               new_consensus = trim_consensus_with_flag(new_consensus, trim_flag)
 
