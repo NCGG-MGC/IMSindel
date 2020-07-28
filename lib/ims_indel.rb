@@ -19,17 +19,19 @@ module IMSIndel
         puts("#{@config[:bam]}: No such file")
         return false
       end
-      puts "mafft version"
+      puts "mafft version:"
       unless system(@config[:mafft], "--version")
         puts("#{@config[:mafft]}: No such file")
         return false
       end
-      puts "samtools version"
+      puts ""
+      puts "samtools version:"
       unless system(@config[:samtools], "--version")
         puts("#{@config[:samtools]}: No such file")
         return false
       end
-      puts "glsearch version"
+      puts ""
+      puts "glsearch version:"
       unless system(@config[:glsearch], "-h")
         puts("#{@config[:glsearch]}: No such file")
         return false

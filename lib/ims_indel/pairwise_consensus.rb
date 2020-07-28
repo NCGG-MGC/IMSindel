@@ -27,7 +27,7 @@ module IMSIndel
       gap_flags                  = glsearch_result[:gap_flags]
       non_gap_flags              = glsearch_result[:non_gap_flags]
       flag_name                  = glsearch_result[:flag_name]
-      
+
       # -----------------------------
       # check for gap_priority (gap優先)
       # -----------------------------
@@ -39,7 +39,7 @@ module IMSIndel
         case count
         when 0
           next
-        when 1 
+        when 1
           sttpos = $1.to_i if /^global\/local score.+:(.+)-\d+\)$/ =~ line
           id = line.split("\s").first
 
@@ -79,7 +79,7 @@ module IMSIndel
         back_gap = "-" * (align_ref.size - align_seq.size)
         align_seq += back_gap
       end
-      
+
       # gap_priorityのalignmentのcheck
       check_flg = 0
       if align_ref.count("-") == 0   # deletion check
@@ -100,7 +100,7 @@ module IMSIndel
           case count
           when 0
             next
-          when 1 
+          when 1
             sttpos = $1.to_i if /^global\/local score.+:(.+)-\d+\)$/ =~ line
             id = line.split("\s").first
             unless non_gap_flags[id].nil?
@@ -139,7 +139,7 @@ module IMSIndel
           align_seq += back_gap
         end
       end
-      
+
       # ---------------------------------------------------------------------------------------
       #
       # makeing a consensus seq
@@ -183,16 +183,14 @@ module IMSIndel
           flag_name["seq"] = "#{read_flag}_#{sttpos}_#{endpos}"
         end
       end
-      tmp_seq.close
-      tmp_ref.close
-      gap_priority = `#{@glsearch_bin} -s #{@glsearch_mat} -g0 -f20 #{tmp_seq.path} #{tmp_ref.path}` # gap優先alignment
-      unless $?.success?
-        raise "glsearch exec error: #{$?}\n`#{@glsearch_bin} -s #{@glsearch_mat} -g0 -f20 #{tmp_seq.path} #{tmp_ref.path}`"
-      end
-      non_gap_priority = `#{@glsearch_bin} -s #{@glsearch_mat} -f20 #{tmp_seq.path} #{tmp_ref.path}` # gap非優先alignment
-      unless $?.success?
-        raise "glsearch exec error: #{$?}\n`#{@glsearch_bin} -s #{@glsearch_mat} -f20 #{tmp_seq.path} #{tmp_ref.path}` "
-      end
+      tmp_seq.flush
+      tmp_ref.flush
+      cmd = "#{@glsearch_bin} -s #{@glsearch_mat} -g0 -f20 #{tmp_seq.path} #{tmp_ref.path}"
+      gap_priority = `${cmd}` # gap優先alignment
+      report_error($?, cmd, [tmp_seq, tmp_ref]) unless $?.success?
+      cmd = "#{@glsearch_bin} -s #{@glsearch_mat} -f20 #{tmp_seq.path} #{tmp_ref.path}"
+      non_gap_priority = `#{cmd}` # gap非優先alignment
+      report_error($?, cmd, [tmp_seq, tmp_ref]) unless $?.success?
       tmp_seq.close(true)
       tmp_ref.close(true)
       return { gap_priority_alignment: gap_priority,

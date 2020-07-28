@@ -150,24 +150,14 @@ module IMSIndel
       if @temp_path && !@temp_path.empty?
         env['TMPDIR'] = @temp_path
       end
-      res, err, status = Open3.capture3(env,
-                                        @mafft,
-                                        '--nuc',
-                                        '--ep', '0.0',
-                                        '--op', '1',
-                                        '--genafpair',
-                                        '--maxiterate', '1000',
-                                        tmp.path)
+      cmd = [@mafft, '--nuc', '--ep', '0.0', '--op', '1', '--genafpair', '--maxiterate', '1000', tmp.path]
+      res, err, status = Open3.capture3(env, *cmd)
       unless status.success?
-        STDERR.puts("mafft stderr:\n#{err}")
-        tmp.open
-        STDERR.puts("mafft inputs:\n#{tmp.read}")
-        STDERR.puts("mafft output:\n#{res}")
-        STDERR.puts("mafft exec error: #{status}")
-        tmp.close!
-        exit(1)
+        STDERR.puts("mafft stderr:")
+        STDERR.puts(err)
+        report_error(status, cmd.join(' '), [tmp]) if status.success?
       end
-      tmp.close!
+      tmp.close(true)
 
       # makeing a consensus seq
       align_reads = {}

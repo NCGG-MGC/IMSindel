@@ -40,4 +40,21 @@ module IMSIndel::ConsensusUtil
     end
     return consensus_str
   end
+
+  def report_error(result, cmd, tmp_files)
+    STDERR.puts("command exec error: #{result}")
+    STDERR.puts("check result and inputs of the following command")
+    STDERR.puts(cmd)
+
+    Dir.mktmpdir do |dir|
+      tmp_files.each do |t|
+        path = t.path
+        copy = File.join(dir, File.basename(path))
+        FileUtils.copy_file(path, copy)
+        t.close(true)
+        FileUtils.mv(copy, path)
+      end
+    end
+    exit(1)
+  end
 end
