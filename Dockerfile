@@ -1,4 +1,4 @@
-FROM ruby:2.7-slim
+FROM ruby:3.0.0-slim
 
 RUN set -eux; apt-get update && \
     apt-get install -y  --no-install-recommends samtools curl mafft && \
