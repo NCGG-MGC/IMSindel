@@ -186,7 +186,7 @@ module IMSIndel
       tmp_seq.flush
       tmp_ref.flush
       cmd = "#{@glsearch_bin} -s #{@glsearch_mat} -g0 -f20 #{tmp_seq.path} #{tmp_ref.path}"
-      gap_priority = `${cmd}` # gap優先alignment
+      gap_priority = `#{cmd}` # gap優先alignment
       report_error($?, cmd, [tmp_seq, tmp_ref]) unless $?.success?
       cmd = "#{@glsearch_bin} -s #{@glsearch_mat} -f20 #{tmp_seq.path} #{tmp_ref.path}"
       non_gap_priority = `#{cmd}` # gap非優先alignment
