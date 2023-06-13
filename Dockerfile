@@ -4,7 +4,7 @@ RUN set -eux; apt-get update && \
     apt-get install -y  --no-install-recommends samtools curl mafft && \
     gem install bio && \
     cd /opt && \
-    curl -OL http://faculty.virginia.edu/wrpearson/fasta/CURRENT/fasa36-linux64.tar.gz && \
+    curl -OL https://fasta.bioch.virginia.edu/wrpearson/fasta/CURRENT/fasta36-linux64.tar.gz && \
     tar xf fasa36-linux64.tar.gz && \
     mkdir /opt/IMSindel && \
     rm -rf /var/lib/apt/lists/*
