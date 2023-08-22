@@ -2,6 +2,8 @@
 
 Insertions and deletions (indels) have been implicated in dozens of human diseases through the radical alteration of gene function by short frameshift indels as well as long indels. However, the accurate detection of these indels from next-generation sequencing data is still challenging. This is particularly true for intermediate-size indels (≥50 bp), due to the short DNA sequencing reads. Here, we developed a new method that predicts intermediate-size indels using BWA soft-clipped fragments (unmatched fragments in partially mapped reads) and unmapped reads. 
 
+[Fig1.Shigemizu.pdf](https://github.com/NCGG-MGC/IMSindel/files/12403882/Fig1.Shigemizu.pdf)
+
 ## Reference
 
 Daichi Shigemizu, Fuyuki Miya, Shintaro Akiyama, Shujiro Okuda, Keith A Boroevich, Akihiro Fujimoto, Hidewaki Nakagawa, Kouichi Ozaki, Shumpei Niida, Yonehiro Kanemura, Nobuhiko Okamoto, Shinji Saitoh, Mitsuhiro Kato, Mami Yamasaki, Tatsuo Matsunaga, Hideki Mutai, Kenjiro Kosaki & Tatsuhiko Tsunoda,  IMSindel: An accurate intermediate-size indel detection tool incorporating de novo assembly and gapped global-local alignment with split read analysis, Scientific Reports volume 8, Article number: 5608 (2018)
